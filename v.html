@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Videy - Watch</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
+        .header { background: white; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header .logo { font-size: 24px; font-weight: bold; text-decoration: none; color: #1c1e21; }
+        .video-container { max-width: 800px; margin: 40px auto; }
+        #video-player { width: 100%; border-radius: 8px; background: black; }
+        #message { text-align: center; font-size: 18px; color: #65676b; margin-top: 50px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="logo">Videy</a>
+    </div>
+
+    <div class="video-container">
+        <video id="video-player" controls autoplay playsinline></video>
+        <div id="message">Loading video...</div>
+    </div>
+
+    <script>
+    // --- GANTI DENGAN URL BACKEND ANDA ---
+    const VERCEL_BACKEND_URL = 'GANTI_DENGAN_URL_BACKEND_VERCEL_ANDA';
+    // ------------------------------------
+
+    // Fungsi ini akan berjalan otomatis saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', async () => {
+        const videoPlayer = document.getElementById('video-player');
+        const messageDiv = document.getElementById('message');
+
+        // 1. Ambil 'id' dari URL halaman ini
+        const params = new URLSearchParams(window.location.search);
+        const videoId = params.get('id');
+
+        if (!videoId) {
+            messageDiv.textContent = 'Error: Video ID not found in URL.';
+            videoPlayer.style.display = 'none';
+            return;
+        }
+
+        try {
+            // 2. Minta URL video asli dari backend
+            const response = await fetch(`${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`);
+            
+            if (!response.ok) {
+                messageDiv.textContent = 'Error: Video not found or could not be loaded.';
+                videoPlayer.style.display = 'none';
+                throw new Error('Failed to fetch video URL.');
+            }
+
+            const data = await response.json();
+            const videoUrl = data.videoUrl;
+
+            // 3. Masukkan URL ke video player dan tampilkan
+            videoPlayer.src = videoUrl;
+            messageDiv.style.display = 'none'; // Sembunyikan pesan "Loading"
+
+        } catch (error) {
+            console.error('Error:', error);
+            messageDiv.textContent = 'An error occurred while loading the video.';
+            videoPlayer.style.display = 'none';
+        }
+    });
+    </script>
+</body>
+</html>

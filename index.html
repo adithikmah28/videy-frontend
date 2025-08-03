@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-A">
+    <meta charset="UTF-8">
     <title>Videy - Simple Video Upload</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
@@ -9,23 +9,27 @@
         .upload-btn-main:hover { background: #0056b3; }
         .progress-bar { background: #6c757d; cursor: default; }
         #errorMsg { color: #dc3545; margin-top: 15px; font-weight: bold; }
+        #successLink { margin-top: 20px; font-size: 16px; word-break: break-all; }
+        #successLink a { color: #28a745; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <h1>Simple Video Upload</h1>
-    <p>Upload your video without an account.</p>
+    <p>Upload your video to get a custom shareable link.</p>
 
     <form id="uploadForm">
         <input type="file" id="fileInput" accept="video/*" style="display:none;">
         <button type="button" class="upload-btn-main" id="uploadBtn">Upload a Video</button>
     </form>
     <div id="errorMsg"></div>
+    <div id="successLink"></div>
 
     <script>
     const uploadBtn = document.getElementById('uploadBtn');
     const fileInput = document.getElementById('fileInput');
     const errorMsg = document.getElementById('errorMsg');
+    const successLinkDiv = document.getElementById('successLink');
 
     // --- GANTI BAGIAN INI DENGAN SANGAT TELITI ---
     const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app'; // CONTOH: https://videy-backend-xyz.vercel.app (TANPA / di akhir)
@@ -41,20 +45,52 @@
         if (fileInput.files.length === 0) return;
         const file = fileInput.files[0];
         errorMsg.textContent = '';
+        successLinkDiv.innerHTML = '';
         const progressBar = document.createElement('div');
         progressBar.className = 'progress-bar';
         progressBar.textContent = 'Preparing...';
         uploadBtn.replaceWith(progressBar);
 
         try {
+            // Step 1: Dapatkan signature untuk upload ke Cloudinary
+            progressBar.textContent = '1/4: Getting permission...';
             const signatureResponse = await fetch(`${VERCEL_BACKEND_URL}/api/generate-signature`, { method: 'POST' });
-            if (!signatureResponse.ok) {
-                // Coba baca error dari server jika ada
-                const err = await signatureResponse.text();
-                throw new Error('Could not get signature from server. Server says: ' + err);
-            }
-
+            if (!signatureResponse.ok) throw new Error('Could not get signature.');
             const { signature, timestamp } = await signatureResponse.json();
+
+            // Step 2: Upload file ke Cloudinary
+            progressBar.textContent = '2/4: Uploading file...';
+            const cloudinaryUrl = await uploadToCloudinary(file, signature, timestamp, progressBar);
+
+            // Step 3: Kirim URL Cloudinary ke backend kita untuk membuat halaman kustom
+            progressBar.textContent = '3/4: Creating custom page...';
+            const createPageResponse = await fetch(`${VERCEL_BACKEND_URL}/api/create-video-page`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cloudinaryUrl: cloudinaryUrl })
+            });
+            if (!createPageResponse.ok) throw new Error('Could not create custom video page.');
+            const pageData = await createPageResponse.json();
+            
+            // Step 4: Berhasil! Tampilkan link dan redirect
+            progressBar.textContent = '4/4: Success!';
+            progressBar.style.backgroundColor = '#28a745';
+            
+            const finalUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}v.html?id=${pageData.id}`;
+            successLinkDiv.innerHTML = `Your custom link: <a href="${finalUrl}" target="_blank">${finalUrl}</a>`;
+
+            // Redirect otomatis setelah 3 detik
+            setTimeout(() => { window.location.href = finalUrl; }, 3000);
+
+        } catch (error) {
+            console.error('Upload process error:', error);
+            errorMsg.textContent = error.message;
+            progressBar.replaceWith(uploadBtn);
+        }
+    });
+
+    function uploadToCloudinary(file, signature, timestamp, progressBar) {
+        return new Promise((resolve, reject) => {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('api_key', CLOUDINARY_API_KEY);
@@ -67,33 +103,24 @@
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
                     const percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.textContent = `${percent}%`;
-                    if (percent >= 100) progressBar.textContent = 'Processing...';
+                    progressBar.textContent = `2/4: Uploading file... ${percent}%`;
                 }
             };
 
             xhr.onload = () => {
                 if (xhr.status === 200) {
                     const data = JSON.parse(xhr.responseText);
-                    progressBar.style.backgroundColor = '#28a745';
-                    progressBar.textContent = 'Success!';
-                    // Redirect ke video setelah 1 detik
-                    setTimeout(() => { window.location.href = data.secure_url; }, 1000);
+                    resolve(data.secure_url); // Berhasil, kembalikan URL Cloudinary
                 } else {
                     const errorData = JSON.parse(xhr.responseText);
-                    throw new Error(`Upload to Cloudinary failed: ${errorData.error.message}`);
+                    reject(new Error(`Upload to Cloudinary failed: ${errorData.error.message}`));
                 }
             };
-
-            xhr.onerror = () => { throw new Error('A network error occurred during upload.'); };
+            
+            xhr.onerror = () => { reject(new Error('A network error occurred during upload.')); };
             xhr.send(formData);
-
-        } catch (error) {
-            console.error('Upload process error:', error);
-            errorMsg.textContent = error.message;
-            progressBar.replaceWith(uploadBtn);
-        }
-    });
+        });
+    }
     </script>
 </body>
 </html>
