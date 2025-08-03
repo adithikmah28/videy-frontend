@@ -23,38 +23,30 @@
     </div>
 
     <script>
-    // --- GANTI DENGAN URL BACKEND ANDA ---
-    const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app';
-    // ------------------------------------
+    // --- GANTI DENGAN URL BACKEND ANDA (PASTIKAN TIDAK ADA SALAH KETIK) ---
+    const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app'; // Ganti ini dengan URL Vercel Anda yang benar
+    // ----------------------------------------------------------------------
 
-    // Fungsi ini akan berjalan otomatis saat halaman dimuat
     document.addEventListener('DOMContentLoaded', async () => {
         const videoPlayer = document.getElementById('video-player');
         const messageDiv = document.getElementById('message');
 
-        // 1. Ambil 'id' dari URL halaman ini
-        const params = new URLSearchParams(window.location.search);
-        const videoId = params.get('id');
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const videoId = params.get('id');
 
-        if (!videoId) {
-            messageDiv.textContent = 'Error: Video ID not found in URL.';
-            videoPlayer.style.display = 'none';
-            return;
-        }
+            if (!videoId) {
+                messageDiv.textContent = 'Error: Video ID not found in URL.';
+                videoPlayer.style.display = 'none';
+                return;
+            }
 
-         {
-            /// ... kode sebelumnya ...
-try {
-    // 2. Minta URL video asli dari backend
+            const fullApiUrl = `${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`;
+            console.log('Attempting to fetch from:', fullApiUrl);
 
-    // BARIS BARU UNTUK DEBUGGING:
-    const fullApiUrl = `${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`;
-    console.log('Mencoba fetch ke URL ini:', fullApiUrl); // <-- TAMBAHKAN INI
-
-    const response = await fetch(fullApiUrl); // Gunakan variabel yang baru kita buat
-    
-    if (!response.ok) {
-// ... sisa kode ...
+            const response = await fetch(fullApiUrl);
+            
+            if (!response.ok) {
                 messageDiv.textContent = 'Error: Video not found or could not be loaded.';
                 videoPlayer.style.display = 'none';
                 throw new Error('Failed to fetch video URL.');
@@ -63,9 +55,8 @@ try {
             const data = await response.json();
             const videoUrl = data.videoUrl;
 
-            // 3. Masukkan URL ke video player dan tampilkan
             videoPlayer.src = videoUrl;
-            messageDiv.style.display = 'none'; // Sembunyikan pesan "Loading"
+            messageDiv.style.display = 'none';
 
         } catch (error) {
             console.error('Error:', error);
