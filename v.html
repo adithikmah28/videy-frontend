@@ -4,12 +4,61 @@
     <meta charset="UTF-8">
     <title>Videy - Watch</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
-        .header { background: white; padding: 15px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header .logo { font-size: 24px; font-weight: bold; text-decoration: none; color: #1c1e21; }
-        .video-container { max-width: 800px; margin: 40px auto; }
-        #video-player { width: 100%; border-radius: 8px; background: black; }
-        #message { text-align: center; font-size: 18px; color: #65676b; margin-top: 50px; }
+        /* Pengaturan Dasar Halaman */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #f0f2f5; 
+            margin: 0; 
+        }
+    
+        /* Header */
+        .header { 
+            background: white; 
+            padding: 15px 30px; /* Sedikit lebih banyak padding */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); 
+            border-bottom: 1px solid #ddd;
+        }
+        .header .logo { 
+            font-size: 24px; 
+            font-weight: bold; 
+            text-decoration: none; 
+            color: #1c1e21; 
+        }
+    
+        /* --- INI BAGIAN PENTINGNYA --- */
+    
+        /* Kontainer yang membungkus video */
+        .video-container {
+            /* Aturan untuk Desktop: Lebar maksimal 900px dan selalu di tengah */
+            max-width: 900px; 
+            margin: 40px auto; /* 40px untuk atas/bawah, auto untuk kiri/kanan agar center */
+            
+            /* Aturan untuk Seluler: Lebarnya 95% dari layar, jadi ada sisa 2.5% di tiap sisi */
+            width: 95%; 
+        }
+    
+        /* Player Videonya Sendiri */
+        #video-player {
+            /* Lebarnya 100% dari .video-container */
+            width: 100%; 
+            /* Tingginya otomatis mengikuti rasio video */
+            height: auto; 
+            /* Mencegah ada spasi aneh di bawah video */
+            display: block; 
+            
+            /* Efek visual tambahan (opsional tapi bagus) */
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+            background: black; 
+        }
+        
+        /* Pesan "Loading..." */
+        #message { 
+            text-align: center; 
+            font-size: 18px; 
+            color: #65676b; 
+            margin-top: 50px; 
+        }
     </style>
 </head>
 <body>
