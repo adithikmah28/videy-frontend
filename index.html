@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-A">
+    <title>Videy - Simple Video Upload</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .upload-btn-main, .progress-bar { background: #007bff; color: white; border: none; border-radius: 20px; padding: 12px 24px; font-size: 16px; cursor: pointer; min-width: 180px; transition: background-color 0.2s; }
+        .upload-btn-main:hover { background: #0056b3; }
+        .progress-bar { background: #6c757d; cursor: default; }
+        #errorMsg { color: #dc3545; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Simple Video Upload</h1>
+    <p>Upload your video without an account.</p>
+
+    <form id="uploadForm">
+        <input type="file" id="fileInput" accept="video/*" style="display:none;">
+        <button type="button" class="upload-btn-main" id="uploadBtn">Upload a Video</button>
+    </form>
+    <div id="errorMsg"></div>
+
+    <script>
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // --- GANTI BAGIAN INI DENGAN SANGAT TELITI ---
+    const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app'; // CONTOH: https://videy-backend-xyz.vercel.app (TANPA / di akhir)
+    const CLOUDINARY_CLOUD_NAME = 'dkvow8ixo';
+    const CLOUDINARY_API_KEY = '268514457821924';
+    // ----------------------------------------------
+    
+    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async function() {
+        if (fileInput.files.length === 0) return;
+        const file = fileInput.files[0];
+        errorMsg.textContent = '';
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        progressBar.textContent = 'Preparing...';
+        uploadBtn.replaceWith(progressBar);
+
+        try {
+            const signatureResponse = await fetch(`${VERCEL_BACKEND_URL}/api/generate-signature`, { method: 'POST' });
+            if (!signatureResponse.ok) {
+                // Coba baca error dari server jika ada
+                const err = await signatureResponse.text();
+                throw new Error('Could not get signature from server. Server says: ' + err);
+            }
+
+            const { signature, timestamp } = await signatureResponse.json();
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', CLOUDINARY_API_KEY);
+            formData.append('timestamp', timestamp);
+            formData.append('signature', signature);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', CLOUDINARY_UPLOAD_URL, true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.textContent = `${percent}%`;
+                    if (percent >= 100) progressBar.textContent = 'Processing...';
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    progressBar.style.backgroundColor = '#28a745';
+                    progressBar.textContent = 'Success!';
+                    // Redirect ke video setelah 1 detik
+                    setTimeout(() => { window.location.href = data.secure_url; }, 1000);
+                } else {
+                    const errorData = JSON.parse(xhr.responseText);
+                    throw new Error(`Upload to Cloudinary failed: ${errorData.error.message}`);
+                }
+            };
+
+            xhr.onerror = () => { throw new Error('A network error occurred during upload.'); };
+            xhr.send(formData);
+
+        } catch (error) {
+            console.error('Upload process error:', error);
+            errorMsg.textContent = error.message;
+            progressBar.replaceWith(uploadBtn);
+        }
+    });
+    </script>
+</body>
+</html>
