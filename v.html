@@ -42,11 +42,19 @@
             return;
         }
 
-        try {
-            // 2. Minta URL video asli dari backend
-            const response = await fetch(`${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`);
-            
-            if (!response.ok) {
+         {
+            /// ... kode sebelumnya ...
+try {
+    // 2. Minta URL video asli dari backend
+
+    // BARIS BARU UNTUK DEBUGGING:
+    const fullApiUrl = `${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`;
+    console.log('Mencoba fetch ke URL ini:', fullApiUrl); // <-- TAMBAHKAN INI
+
+    const response = await fetch(fullApiUrl); // Gunakan variabel yang baru kita buat
+    
+    if (!response.ok) {
+// ... sisa kode ...
                 messageDiv.textContent = 'Error: Video not found or could not be loaded.';
                 videoPlayer.style.display = 'none';
                 throw new Error('Failed to fetch video URL.');
