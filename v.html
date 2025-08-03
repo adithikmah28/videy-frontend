@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <title>Videy - Watch</title>
     <style>
-        /* Pengaturan Dasar Halaman */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background: #f0f2f5; 
             margin: 0; 
         }
-    
-        /* Header */
         .header { 
             background: white; 
-            padding: 15px 30px; /* Sedikit lebih banyak padding */
+            padding: 15px 30px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.08); 
             border-bottom: 1px solid #ddd;
         }
@@ -24,35 +21,19 @@
             text-decoration: none; 
             color: #1c1e21; 
         }
-    
-        /* --- INI BAGIAN PENTINGNYA --- */
-    
-        /* Kontainer yang membungkus video */
         .video-container {
-            /* Aturan untuk Desktop: Lebar maksimal 900px dan selalu di tengah */
             max-width: 900px; 
-            margin: 40px auto; /* 40px untuk atas/bawah, auto untuk kiri/kanan agar center */
-            
-            /* Aturan untuk Seluler: Lebarnya 95% dari layar, jadi ada sisa 2.5% di tiap sisi */
+            margin: 40px auto;
             width: 95%; 
         }
-    
-        /* Player Videonya Sendiri */
         #video-player {
-            /* Lebarnya 100% dari .video-container */
             width: 100%; 
-            /* Tingginya otomatis mengikuti rasio video */
             height: auto; 
-            /* Mencegah ada spasi aneh di bawah video */
             display: block; 
-            
-            /* Efek visual tambahan (opsional tapi bagus) */
             border-radius: 12px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.15);
             background: black; 
         }
-        
-        /* Pesan "Loading..." */
         #message { 
             text-align: center; 
             font-size: 18px; 
@@ -66,50 +47,39 @@
         <a href="/" class="logo">Videy</a>
     </div>
 
+    <!-- STRUKTUR YANG BENAR: VIDEO ADA DI DALAM CONTAINER -->
     <div class="video-container">
         <video id="video-player" controls autoplay playsinline></video>
         <div id="message">Loading video...</div>
     </div>
 
     <script>
-    // --- GANTI DENGAN URL BACKEND ANDA (PASTIKAN TIDAK ADA SALAH KETIK) ---
-    const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app'; // Ganti ini dengan URL Vercel Anda yang benar
-    // ----------------------------------------------------------------------
+    const VERCEL_BACKEND_URL = 'https://videy-backend.vercel.app'; // GANTI JIKA PERLU
 
     document.addEventListener('DOMContentLoaded', async () => {
         const videoPlayer = document.getElementById('video-player');
         const messageDiv = document.getElementById('message');
-
         try {
             const params = new URLSearchParams(window.location.search);
             const videoId = params.get('id');
-
             if (!videoId) {
-                messageDiv.textContent = 'Error: Video ID not found in URL.';
+                messageDiv.textContent = 'Error: Video ID not found.';
                 videoPlayer.style.display = 'none';
                 return;
             }
-
             const fullApiUrl = `${VERCEL_BACKEND_URL}/api/get-video-url?id=${videoId}`;
-            console.log('Attempting to fetch from:', fullApiUrl);
-
             const response = await fetch(fullApiUrl);
-            
             if (!response.ok) {
-                messageDiv.textContent = 'Error: Video not found or could not be loaded.';
+                messageDiv.textContent = 'Error: Video not found.';
                 videoPlayer.style.display = 'none';
                 throw new Error('Failed to fetch video URL.');
             }
-
             const data = await response.json();
-            const videoUrl = data.videoUrl;
-
-            videoPlayer.src = videoUrl;
+            videoPlayer.src = data.videoUrl;
             messageDiv.style.display = 'none';
-
         } catch (error) {
             console.error('Error:', error);
-            messageDiv.textContent = 'An error occurred while loading the video.';
+            messageDiv.textContent = 'An error occurred.';
             videoPlayer.style.display = 'none';
         }
     });
